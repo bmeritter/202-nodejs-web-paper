@@ -1,12 +1,15 @@
 import mongoose from 'mongoose';
 const Schema = mongoose.Schema;
 
-const homeworkSchema = new Schema({
-  stack: String,
+const paperSchema = new Schema({
+  name: String,
   description: String,
-  gitAddress: String
+  homeworks: [{
+    type: Schema.ObjectId,
+    ref: 'Homework'
+  }]
 });
 
-const Homework = mongoose.model('Homework', homeworkSchema);
+const Paper = mongoose.model('Paper', paperSchema);
 
-export default  Homework;
+export default  Paper;

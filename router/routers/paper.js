@@ -1,14 +1,13 @@
 import {Router} from 'express';
-import HomeworkController from '../../controller/homework-controll';
-
+import PaperController from '../../controller/paper-controller';
 
 const router = Router();
-const homeworkCtrl = new HomeworkController();
+const paperCtrl = new PaperController();
 
-router.get('/', homeworkCtrl.getAll);
-router.get('/:id', homeworkCtrl.getOne);
-router.delete('/:id', homeworkCtrl.delete);
-router.put('/:id', homeworkCtrl.update);
-router.post('/', homeworkCtrl.create);
+router.get('/', paperCtrl.getAll);
+router.get('/:id', paperCtrl.getOne);
+router.delete('/:id', paperCtrl.delete);
+router.put('/:id', paperCtrl.update);
+router.post('/', paperCtrl.create);
 
 export default router;

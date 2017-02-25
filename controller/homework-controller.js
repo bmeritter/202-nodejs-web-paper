@@ -1,7 +1,9 @@
 import async from 'async';
 import Homework from '../model/homework';
+import Paper from '../model/paper';
+import constant from '../config/constant';
 
-export default class HomeContorller {
+export default class HomeworkContorller {
   getAll(req, res, next) {
     async.series({
       totalCount: (done) => {
@@ -14,7 +16,7 @@ export default class HomeContorller {
       if (err) {
         return next(err);
       }
-      return res.status(200).send(result);
+      return res.status(constant.httpCode.Ok).send(result);
     });
   }
 
@@ -24,9 +26,9 @@ export default class HomeContorller {
         return next(err);
       }
       if (!doc) {
-        return res.sendStatus(404);
+        return res.sendStatus(constant.httpCode.NOT_FOUND);
       }
-      res.status(200).send(doc);
+      res.status(constant.httpCode.Ok).send(doc);
     });
   }
 
@@ -35,21 +37,49 @@ export default class HomeContorller {
       if (err) {
         return next(err);
       }
-      return res.status(201).send(`homeworks/${doc._id}`);
+      return res.status(constant.httpCode.CREATED).send(`homeworks/${doc._id}`);
     })
   }
 
   delete(req, res, next) {
-    Homework.findByIdAndRemove(req.params.id, (err, doc) => {
-      if(err) {
+    async.waterfall([
+      (done) => {
+        Paper.findOne({homeworks: req.params.id}, (err, doc) => {
+          if (err) {
+            return next(err);
+          }
+          if (doc) {
+            return done(true, null);
+          }
+          return done(null, doc);
+        });
+      },
+      (doc, done) => {
+        Homework.findByAndRemove(req.params.id, done);
+      }
+    ], (err, doc) => {
+      if (err === true) {
+        return res.sendStatus(constant.httpCode.BAD_REQUEST);
+      }
+      if (err) {
         return next(err);
       }
-      if(!doc) {
-        return res.sendStatus(404);
+      if (!doc) {
+        return res.sendStatus(constant.httpCode.NOT_FOUND);
       }
-      return res.sendStatus(204);
+      return res.sendStatus(constant.httpCode.NO_CONTENT);
     });
   }
 
-
+  update(req, res, next) {
+    Homework.findByIdAndUpdate(req.params.id, req.body, (err, doc) => {
+      if (err) {
+        return next(err);
+      }
+      if (!doc) {
+        return res.sendStatus(constant.httpCode.NOT_FOUND);
+      }
+      return res.sendStatus(constant.httpCode.NO_CONTENT);
+    });
+  }
 }

@@ -1,67 +1,93 @@
 import async from 'async';
-import Homework from '../model/homework';
+import Paper from '../model/paper';
+import constant from '../config/constant';
 
-export default class HomeContorller {
+const mapHomeworkToUri = (homework) => {
+  return homework.map(({_id}) => {
+    return {uri: `homeworks/${_id}`}
+  });
+};
+
+export default class PaperContorller {
   getAll(req, res, next) {
     async.series({
       totalCount: (done) => {
-        Homework.count(done);
+        Paper.count(done);
       },
       items: (done) => {
-        Homework.find(done);
+        Paper.find({})
+          .populate('homeworks')
+          .exec((err, docs) => {
+            if (err) {
+              return next(err);
+            }
+
+            let papers = docs.map((doc) => {
+              let paper = doc.toJSON();
+              let quizzes = mapHomeworkToUri(paper.homeworks);
+              paper.homeworks = quizzes;
+              return paper;
+            });
+            done(null, papers);
+          })
       }
     }, (err, result) => {
       if (err) {
         return next(err);
       }
-      return res.status(200).send(result);
+      return res.status(constant.httpCode.Ok).send(result);
     });
   }
 
   getOne(req, res, next) {
-    Homework.findById(req.params.id, (err, doc) => {
-      if (err) {
-        return next(err);
-      }
-      if (!doc) {
-        return res.sendStatus(404);
-      }
-      res.status(200).send(doc);
-    });
+    Paper.findById(req.params.id)
+      .populate('homeworks')
+      .exec((err, doc) => {
+        if (err) {
+          return next(err);
+        }
+        if (!doc) {
+          return res.sendStatus(constant.httpCode.NOT_FOUND);
+        }
+
+        let paper = doc.toJSON();
+        let quizzes = mapHomeworkToUri(paper.homeworks);
+        paper.homeworks = quizzes;
+
+        res.status(constant.httpCode.Ok).send(paper);
+      });
   }
 
   create(req, res, next) {
-    Homework.create(req.body, (err, doc) => {
+    Paper.create(req.body, (err, doc) => {
       if (err) {
         return next(err);
       }
-      return res.status(201).send(`homeworks/${doc._id}`);
+      return res.status(constant.httpCode.CREATED).send(`papers/${doc._id}`);
     })
   }
 
   delete(req, res, next) {
-    Homework.findByIdAndRemove(req.params.id, (err, doc) => {
+    Paper.findOneAndRemove(req.params.id, (err, doc) => {
       if (err) {
         return next(err);
       }
       if (!doc) {
-        return res.sendStatus(404);
+        return res.sendStatus(constant.httpCode.NOT_FOUND);
       }
-      return res.sendStatus(204);
+      return res.sendStatus(constant.httpCode.NO_CONTENT);
     });
   }
 
   update(req, res, next) {
-    Homework.findByIdAndUpdate(req.params.id, (err, doc) => {
+    Paper.findByIdAndUpdate(req.params.id, req.body, (err, doc) => {
       if (err) {
         return next(err);
       }
       if (!doc) {
-        return res.sendStatus(404);
+        return res.sendStatus(constant.httpCode.NOT_FOUND);
       }
-      return res.sendStatus(204);
+      return res.sendStatus(constant.httpCode.NO_CONTENT);
     });
   }
-
-
 }
